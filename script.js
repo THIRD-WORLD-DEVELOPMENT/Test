@@ -1,88 +1,90 @@
-let currentSlide = 0;
-let autoSlideInterval;
+let currentFeaturedIndex = 0;
+let featuredInterval;
 
 document.addEventListener('DOMContentLoaded', function() {
-    initializeFeaturedCarousel();
+    initializeFeaturedDisplay();
     initializeFilterTabs();
     initializeProducts();
     setupEventListeners();
-    startAutoSlide();
+    startFeaturedInterval();
 });
 
-function initializeFeaturedCarousel() {
-    const track = document.querySelector('.carousel-track');
-    const carousel = document.querySelector('.featured-carousel');
+function initializeFeaturedDisplay() {
+    const display = document.querySelector('.featured-display');
+    const indicators = document.querySelector('.featured-indicators');
     
-    track.innerHTML = '';
+    display.innerHTML = '';
+    indicators.innerHTML = '';
     
     const featured = products.filter(p => p.isFeatured);
     
-    featured.forEach(product => {
-        const card = document.createElement('div');
-        card.className = 'featured-card';
-        card.innerHTML = `
-            <div class="featured-image">
-                <img src="${product.image}" alt="${product.name}">
-            </div>
-            <div class="featured-info">
-                <h3>${product.name}</h3>
-                <p class="featured-price">₹${product.price}</p>
+    if (featured.length === 0) return;
+    
+    featured.forEach((product, index) => {
+        const item = document.createElement('div');
+        item.className = `featured-item ${index === 0 ? 'active' : ''}`;
+        item.innerHTML = `
+            <div class="featured-item-content">
+                <div class="featured-item-image">
+                    <img src="${product.image}" alt="${product.name}">
+                </div>
+                <div class="featured-item-info">
+                    <h3>${product.name}</h3>
+                    <p class="featured-item-price">₹${product.price}</p>
+                </div>
             </div>
         `;
-        card.addEventListener('click', () => openModal(product));
-        track.appendChild(card);
-    });
-    
-    const indicatorsDiv = document.createElement('div');
-    indicatorsDiv.className = 'carousel-indicators';
-    featured.forEach((_, index) => {
+        item.addEventListener('click', () => openModal(product));
+        display.appendChild(item);
+        
         const indicator = document.createElement('div');
-        indicator.className = `carousel-indicator ${index === 0 ? 'active' : ''}`;
+        indicator.className = `featured-indicator ${index === 0 ? 'active' : ''}`;
         indicator.addEventListener('click', () => {
-            goToSlide(index);
-            resetAutoSlide();
+            goToFeatured(index);
+            resetFeaturedInterval();
         });
-        indicatorsDiv.appendChild(indicator);
+        indicators.appendChild(indicator);
     });
-    carousel.appendChild(indicatorsDiv);
 }
 
-function startAutoSlide() {
-    autoSlideInterval = setInterval(() => {
-        nextSlide();
-    }, 3000);
+function startFeaturedInterval() {
+    featuredInterval = setInterval(() => {
+        nextFeatured();
+    }, 4000);
 }
 
-function resetAutoSlide() {
-    clearInterval(autoSlideInterval);
-    startAutoSlide();
+function resetFeaturedInterval() {
+    clearInterval(featuredInterval);
+    startFeaturedInterval();
 }
 
-function nextSlide() {
-    const track = document.querySelector('.carousel-track');
-    const cards = track.querySelectorAll('.featured-card');
-    const indicators = document.querySelectorAll('.carousel-indicator');
+function nextFeatured() {
+    const featured = products.filter(p => p.isFeatured);
+    if (featured.length === 0) return;
     
-    if (cards.length === 0) return;
-    
-    currentSlide = (currentSlide + 1) % cards.length;
-    updateCarousel(track, indicators);
+    currentFeaturedIndex = (currentFeaturedIndex + 1) % featured.length;
+    updateFeaturedDisplay();
 }
 
-function goToSlide(index) {
-    const track = document.querySelector('.carousel-track');
-    const indicators = document.querySelectorAll('.carousel-indicator');
+function goToFeatured(index) {
+    const featured = products.filter(p => p.isFeatured);
+    if (featured.length === 0) return;
     
-    currentSlide = index;
-    updateCarousel(track, indicators);
+    currentFeaturedIndex = index;
+    updateFeaturedDisplay();
 }
 
-function updateCarousel(track, indicators) {
-    const containerWidth = track.parentElement.offsetWidth;
-    track.style.transform = `translateX(-${currentSlide * containerWidth}px)`;
+function updateFeaturedDisplay() {
+    const items = document.querySelectorAll('.featured-item');
+    const indicators = document.querySelectorAll('.featured-indicator');
+    const featured = products.filter(p => p.isFeatured);
+    
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === currentFeaturedIndex);
+    });
     
     indicators.forEach((indicator, index) => {
-        indicator.classList.toggle('active', index === currentSlide);
+        indicator.classList.toggle('active', index === currentFeaturedIndex);
     });
 }
 
@@ -206,11 +208,5 @@ function setupEventListeners() {
                 window.scrollTo({ top, behavior: 'smooth' });
             }
         });
-    });
-    
-    window.addEventListener('resize', () => {
-        const track = document.querySelector('.carousel-track');
-        const indicators = document.querySelectorAll('.carousel-indicator');
-        updateCarousel(track, indicators);
     });
 }
