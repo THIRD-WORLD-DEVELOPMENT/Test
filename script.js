@@ -1,14 +1,18 @@
 let currentSlide = 0;
+let autoSlideInterval;
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeFeaturedCarousel();
     initializeFilterTabs();
     initializeProducts();
     setupEventListeners();
+    startAutoSlide();
 });
 
 function initializeFeaturedCarousel() {
     const track = document.querySelector('.carousel-track');
+    const carousel = document.querySelector('.featured-carousel');
+    
     track.innerHTML = '';
     
     const featured = products.filter(p => p.isFeatured);
@@ -19,17 +23,66 @@ function initializeFeaturedCarousel() {
         card.innerHTML = `
             <div class="featured-image">
                 <img src="${product.image}" alt="${product.name}">
-                <div class="featured-overlay">
-                    <button class="quick-view">View Details</button>
-                </div>
             </div>
             <div class="featured-info">
                 <h3>${product.name}</h3>
                 <p class="featured-price">₹${product.price}</p>
             </div>
         `;
-        card.querySelector('.quick-view').addEventListener('click', () => openModal(product));
+        card.addEventListener('click', () => openModal(product));
         track.appendChild(card);
+    });
+    
+    const indicatorsDiv = document.createElement('div');
+    indicatorsDiv.className = 'carousel-indicators';
+    featured.forEach((_, index) => {
+        const indicator = document.createElement('div');
+        indicator.className = `carousel-indicator ${index === 0 ? 'active' : ''}`;
+        indicator.addEventListener('click', () => {
+            goToSlide(index);
+            resetAutoSlide();
+        });
+        indicatorsDiv.appendChild(indicator);
+    });
+    carousel.appendChild(indicatorsDiv);
+}
+
+function startAutoSlide() {
+    autoSlideInterval = setInterval(() => {
+        nextSlide();
+    }, 3000);
+}
+
+function resetAutoSlide() {
+    clearInterval(autoSlideInterval);
+    startAutoSlide();
+}
+
+function nextSlide() {
+    const track = document.querySelector('.carousel-track');
+    const cards = track.querySelectorAll('.featured-card');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+    
+    if (cards.length === 0) return;
+    
+    currentSlide = (currentSlide + 1) % cards.length;
+    updateCarousel(track, indicators);
+}
+
+function goToSlide(index) {
+    const track = document.querySelector('.carousel-track');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+    
+    currentSlide = index;
+    updateCarousel(track, indicators);
+}
+
+function updateCarousel(track, indicators) {
+    const containerWidth = track.parentElement.offsetWidth;
+    track.style.transform = `translateX(-${currentSlide * containerWidth}px)`;
+    
+    indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === currentSlide);
     });
 }
 
@@ -143,34 +196,21 @@ function setupEventListeners() {
     document.querySelector('.modal-close').addEventListener('click', closeModal);
     document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
     
-    const prevBtn = document.querySelector('.carousel-btn.prev');
-    const nextBtn = document.querySelector('.carousel-btn.next');
-    const track = document.querySelector('.carousel-track');
-    
-    nextBtn.addEventListener('click', () => {
-        const cardWidth = track.querySelector('.featured-card').offsetWidth + 30;
-        track.scrollBy({ left: cardWidth, behavior: 'smooth' });
-    });
-    
-    prevBtn.addEventListener('click', () => {
-        const cardWidth = track.querySelector('.featured-card').offsetWidth + 30;
-        track.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-    });
-    
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                const offset = 80;
+                const offset = 60;
                 const top = target.offsetTop - offset;
                 window.scrollTo({ top, behavior: 'smooth' });
             }
         });
     });
     
-    const scrollIndicator = document.querySelector('.scroll-indicator');
-    scrollIndicator.addEventListener('click', () => {
-        document.querySelector('#featured').scrollIntoView({ behavior: 'smooth' });
+    window.addEventListener('resize', () => {
+        const track = document.querySelector('.carousel-track');
+        const indicators = document.querySelectorAll('.carousel-indicator');
+        updateCarousel(track, indicators);
     });
 }
